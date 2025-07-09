@@ -1,3 +1,4 @@
+
 import http.server
 import socketserver
 from urllib.parse import urlparse, parse_qs
@@ -31,3 +32,8 @@ class MyHandler(http.server.SimpleHTTPRequestHandler):
                 self.wfile.write("❌ Incorrect.".encode("utf-8"))
         else:
             super().do_GET()
+
+PORT = 8080
+with socketserver.TCPServer(("", PORT), MyHandler) as httpd:
+    print("Serving on port", PORT)
+    httpd.serve_forever()
