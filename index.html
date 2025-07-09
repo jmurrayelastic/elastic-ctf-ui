@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Elastic Challenge</title>
+  <title>Explore Host Activity</title>
   <style>
     body {
       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -20,12 +20,22 @@
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       max-width: 640px;
       width: 100%;
+      position: relative;
     }
     h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #343741;
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #005fa3;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.01em;
+    }
+    h3.subtitle {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #006BB4;
       margin-bottom: 1.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
     .question-block { margin-bottom: 2rem; }
     label {
@@ -39,6 +49,9 @@
       border: 1px solid #ccc;
       border-radius: 6px;
     }
+    .result { margin-top: 0.5rem; font-weight: 500; }
+    .correct { color: #017D73; }
+    .incorrect { color: #BD271E; }
     button {
       margin-top: 0.75rem;
       padding: 0.5rem 1rem;
@@ -49,53 +62,126 @@
       font-weight: 600;
       cursor: pointer;
     }
-    .result { margin-top: 0.5rem; font-weight: 500; }
-    .correct { color: #017D73; }
-    .incorrect { color: #BD271E; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Challenge Questions</h2>
-
-    <div class="question-block">
-      <label for="q1">1. How many hosts are displayed?</label>
-      <input type="text" id="q1" />
-      <button onclick="submitAnswer('q1')">Submit</button>
-      <p class="result" id="result-q1"></p>
-    </div>
-
-    <div class="question-block">
-      <label for="q2">2. How many unique source IPs are displayed?</label>
-      <input type="text" id="q2" />
-      <button onclick="submitAnswer('q2')">Submit</button>
-      <p class="result" id="result-q2"></p>
-    </div>
-
-    <div class="question-block">
-      <label for="q3">3. How many unique destination IPs are displayed?</label>
-      <input type="text" id="q3" />
-      <button onclick="submitAnswer('q3')">Submit</button>
-      <p class="result" id="result-q3"></p>
-    </div>
+    <h3 class="subtitle" id="subtitle"></h3>
+    <div id="questions"></div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <script>
-    async function submitAnswer(questionId) {
-      const value = document.getElementById(questionId).value.trim();
-      const response = await fetch(`/submit?question=${questionId}&answer=${encodeURIComponent(value)}`);
-      const text = await response.text();
+    const quizData = [
+      {
+        id: "set1",
+        title: "Initial Host Metrics",
+        questions: [
+          { id: "q1", text: "How many hosts are displayed?", answer: "13" },
+          { id: "q2", text: "How many unique source IPs are displayed?", answer: "3700" },
+          { id: "q3", text: "How many unique destination IPs are displayed?", answer: "960" }
+        ]
+      },
+      {
+        id: "set2",
+        title: "Histogram Filtering",
+        questions: [
+          { id: "q4", text: "Filter the Events histogram by event.module:endpoint, how many events are displayed?", answer: "9269498" },
+          { id: "q5", text: "Keep the event.module:endpoint filter and filter the Events histogram by event.dataset: endpoint.alerts. How many hosts are displayed?", answer: "4" }
+        ]
+      },
+      {
+        id: "set3",
+        title: "Host Details",
+        questions: [
+          { id: "q6", text: "Select the All hosts tab. Which host is using Linux as its operating system?", answer: "web02" },
+          { id: "q7", text: "Select dc01. How many critical alerts are open on dc01?", answer: "79" },
+          { id: "q8", text: "What is the alert rule name with the highest count on dc01?", answer: "Malware Detection Alert" }
+        ]
+      },
+      {
+        id: "set4",
+        title: "Uncommon Processes",
+        questions: [
+          { id: "q9", text: "Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
+          { id: "q10", text: "What is the name of the uncommon process on dc01 that was located in the Downloads directory of user MSSQL_svc?", answer: "Trickbot.exe" },
+          { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
+        ]
+      }
+    ];
 
-      const resultElem = document.getElementById(`result-${questionId}`);
-      resultElem.textContent = text;
-      resultElem.classList.remove("correct", "incorrect");
+    let currentSetIndex = 0;
+    const container = document.querySelector(".container");
+    let correctAnswers = {};
 
-      if (text.includes("Correct")) {
-        resultElem.classList.add("correct");
-      } else if (text.includes("Incorrect")) {
-        resultElem.classList.add("incorrect");
+    function renderQuestions(set) {
+      const questionDiv = document.getElementById("questions");
+      questionDiv.innerHTML = "";
+      document.getElementById("subtitle").textContent = set.title;
+      correctAnswers = {};
+
+      set.questions.forEach((q, i) => {
+        correctAnswers[q.id] = false;
+
+        const block = document.createElement("div");
+        block.className = "question-block";
+        block.innerHTML = `
+          <label for="${q.id}">${i + 1}. ${q.text}</label>
+          <input type="text" id="${q.id}" />
+          <button onclick="submitAnswer('${q.id}', '${q.answer}')">Submit</button>
+          <p class="result" id="result-${q.id}"></p>
+        `;
+        questionDiv.appendChild(block);
+      });
+    }
+
+    function submitAnswer(qid, correct) {
+      const input = document.getElementById(qid).value.trim();
+      const result = document.getElementById(`result-${qid}`);
+      result.classList.remove("correct", "incorrect");
+
+      if (input === correct || (qid === "q11" && ["Tsickbot.exe", "Ttickbot.exe"].includes(input))) {
+        result.textContent = "✅ Correct!";
+        result.classList.add("correct");
+        correctAnswers[qid] = true;
+      } else {
+        result.textContent = "❌ Incorrect";
+        result.classList.add("incorrect");
+        correctAnswers[qid] = false;
+      }
+
+      checkAllCorrect();
+    }
+
+    function checkAllCorrect() {
+      if (Object.values(correctAnswers).every(v => v)) {
+        if (!document.getElementById("next-btn")) {
+          confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+          const nextBtn = document.createElement("button");
+          nextBtn.id = "next-btn";
+          nextBtn.textContent = "Next →";
+          nextBtn.style = "position:absolute; bottom:2rem; right:2rem;";
+          nextBtn.onclick = loadNextTrack;
+          container.appendChild(nextBtn);
+        }
       }
     }
+
+    function loadNextTrack() {
+      currentSetIndex++;
+      const nextBtn = document.getElementById("next-btn");
+      if (quizData[currentSetIndex]) {
+        renderQuestions(quizData[currentSetIndex]);
+        if (nextBtn) nextBtn.remove();
+      } else {
+        if (nextBtn) nextBtn.remove();
+        document.getElementById("subtitle").remove();
+        document.getElementById("questions").innerHTML = "<h3>🎉 All questions complete!</h3>";
+      }
+    }
+
+    window.onload = () => renderQuestions(quizData[currentSetIndex]);
   </script>
 </body>
 </html>
