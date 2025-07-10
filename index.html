@@ -12,36 +12,33 @@
       padding: 2rem;
       display: flex;
       justify-content: center;
-      background-image: url('elastic_cluster.png');
-      background-repeat: no-repeat;
-      background-size: 50%;
-      background-position: center;
-      background-blend-mode: multiply;
-      opacity: 0.1;
     }
     .container {
-      background-color: rgba(255, 255, 255, 0.95);
+      background-color: #ffffff;
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       max-width: 640px;
       width: 100%;
       position: relative;
-      z-index: 1;
     }
     h2 {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
       font-weight: 700;
       color: #343741;
-      margin-bottom: 0.5rem;
+      margin-bottom: 1rem;
     }
     h3.subtitle {
-      font-size: 1.1rem;
-      font-weight: 500;
-      color: #666;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #006BB4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom: 1.5rem;
     }
-    .question-block { margin-bottom: 2rem; }
+    .question-block {
+      margin-bottom: 2rem;
+    }
     label {
       font-weight: 600;
       display: block;
@@ -52,10 +49,24 @@
       padding: 0.6rem;
       border: 1px solid #ccc;
       border-radius: 6px;
+      background-color: #e8f0fe;
     }
-    .result { margin-top: 0.5rem; font-weight: 500; }
-    .correct { color: #017D73; }
-    .incorrect { color: #BD271E; }
+    .result {
+      margin-top: 0.5rem;
+      font-weight: 500;
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+    .correct {
+      background-color: #e6f4ea;
+      color: #017d73;
+      border-left: 4px solid #017d73;
+    }
+    .incorrect {
+      background-color: #fbeae5;
+      color: #bd271e;
+      border-left: 4px solid #bd271e;
+    }
     button {
       margin-top: 0.75rem;
       padding: 0.5rem 1rem;
@@ -110,7 +121,7 @@
         questions: [
           { id: "q9", text: "Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
           { id: "q10", text: "What is the name of the uncommon process on dc01 that was located in the Downloads directory of user MSSQL_svc?", answer: "Trickbot.exe" },
-          { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe, Ttickbot.exe" }
+          { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
         ]
       }
     ];
@@ -145,8 +156,7 @@
       const result = document.getElementById(`result-${qid}`);
       result.classList.remove("correct", "incorrect");
 
-      const acceptedAnswers = correct.split(',').map(a => a.trim());
-      if (acceptedAnswers.includes(input)) {
+      if (input && (input === correct || correct.includes(input))) {
         result.textContent = "✅ Correct!";
         result.classList.add("correct");
         correctAnswers[qid] = true;
@@ -161,8 +171,7 @@
 
     function checkAllCorrect() {
       if (Object.values(correctAnswers).every(v => v)) {
-        const existingBtn = document.getElementById("next-btn");
-        if (!existingBtn) {
+        if (!document.getElementById("next-btn")) {
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           const nextBtn = document.createElement("button");
           nextBtn.id = "next-btn";
