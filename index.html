@@ -12,30 +12,34 @@
       padding: 2rem;
       display: flex;
       justify-content: center;
+      background-image: url('elastic_cluster.png');
+      background-repeat: no-repeat;
+      background-size: 50%;
+      background-position: center;
+      background-blend-mode: multiply;
+      opacity: 0.1;
     }
     .container {
-      background-color: #ffffff;
+      background-color: rgba(255, 255, 255, 0.95);
       padding: 2rem;
       border-radius: 12px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
       max-width: 640px;
       width: 100%;
       position: relative;
+      z-index: 1;
     }
     h2 {
-      font-size: 1.75rem;
-      font-weight: 800;
-      color: #005fa3;
-      margin-bottom: 0.25rem;
-      letter-spacing: -0.01em;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #343741;
+      margin-bottom: 0.5rem;
     }
     h3.subtitle {
-      font-size: 1rem;
-      font-weight: 600;
-      color: #006BB4;
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #666;
       margin-bottom: 1.5rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
     }
     .question-block { margin-bottom: 2rem; }
     label {
@@ -106,7 +110,7 @@
         questions: [
           { id: "q9", text: "Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
           { id: "q10", text: "What is the name of the uncommon process on dc01 that was located in the Downloads directory of user MSSQL_svc?", answer: "Trickbot.exe" },
-          { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
+          { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe, Ttickbot.exe" }
         ]
       }
     ];
@@ -141,7 +145,8 @@
       const result = document.getElementById(`result-${qid}`);
       result.classList.remove("correct", "incorrect");
 
-      if (input === correct || (qid === "q11" && ["Tsickbot.exe", "Ttickbot.exe"].includes(input))) {
+      const acceptedAnswers = correct.split(',').map(a => a.trim());
+      if (acceptedAnswers.includes(input)) {
         result.textContent = "✅ Correct!";
         result.classList.add("correct");
         correctAnswers[qid] = true;
@@ -156,7 +161,8 @@
 
     function checkAllCorrect() {
       if (Object.values(correctAnswers).every(v => v)) {
-        if (!document.getElementById("next-btn")) {
+        const existingBtn = document.getElementById("next-btn");
+        if (!existingBtn) {
           confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
           const nextBtn = document.createElement("button");
           nextBtn.id = "next-btn";
@@ -170,14 +176,15 @@
 
     function loadNextTrack() {
       currentSetIndex++;
-      const nextBtn = document.getElementById("next-btn");
       if (quizData[currentSetIndex]) {
         renderQuestions(quizData[currentSetIndex]);
+        const nextBtn = document.getElementById("next-btn");
         if (nextBtn) nextBtn.remove();
       } else {
-        if (nextBtn) nextBtn.remove();
         document.getElementById("subtitle").remove();
         document.getElementById("questions").innerHTML = "<h3>🎉 All questions complete!</h3>";
+        const nextBtn = document.getElementById("next-btn");
+        if (nextBtn) nextBtn.remove();
       }
     }
 
