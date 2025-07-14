@@ -156,21 +156,21 @@
     }
 
     function submitAnswer(qid, correct) {
-      const input = document.getElementById(qid).value.trim();
-      const result = document.getElementById(`result-${qid}`);
-      result.classList.remove("correct", "incorrect");
+     const input = document.getElementById(qid).value.trim();
+     const result = document.getElementById(`result-${qid}`);
+     result.classList.remove("correct", "incorrect");
 
-      if (input && (input === correct || correct.includes(input))) {
-        result.textContent = "✅ Correct!";
-        result.classList.add("correct");
-        correctAnswers[qid] = true;
-      } else {
-        result.textContent = "❌ Incorrect";
-        result.classList.add("incorrect");
-        correctAnswers[qid] = false;
-      }
+     if (input === correct) {
+      result.textContent = "✅ Correct!";
+      result.classList.add("correct");
+      correctAnswers[qid] = true;
+     } else {
+      result.textContent = "❌ Incorrect";
+      result.classList.add("incorrect");
+      correctAnswers[qid] = false;
+     }
 
-      checkAllCorrect();
+     checkAllCorrect();
     }
 
     function checkAllCorrect() {
