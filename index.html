@@ -124,9 +124,9 @@
       id: "set4",
       title: "Uncommon Processes",
       questions: [
-        { id: "q9", text: "Return to the main Hosts page and keep the current filters. Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
+        { id: "q9", text: "Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
         { id: "q10", text: "What is the name of the uncommon process on dc01 that was located in the Downloads directory of user MSSQL_svc?", answer: "Trickbot.exe" },
-        { id: "q11", text: "Name one of the two spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
+        { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
       ]
     }
   ];
@@ -216,10 +216,7 @@
       if (nextBtn) nextBtn.remove();
     } else {
       document.getElementById("subtitle").remove();
-      document.getElementById("questions").innerHTML = "<h3> 🎉 Nice work! In this lab, you used the Hosts page to investigate endpoint activity.
-    By filtering for endpoint alerts, identifying uncommon processes, and drilling into process behavior,
-    you uncovered signs of malware and masquerading tactics.<br><br>
-    Click <strong>Next</strong> at the bottom of the Instructions Pane to continue.</h3>";
+      document.getElementById("questions").innerHTML = "<h3>🎉 All questions complete!</h3>";
       const nextBtn = document.getElementById("next-btn");
       if (nextBtn) nextBtn.remove();
     }
