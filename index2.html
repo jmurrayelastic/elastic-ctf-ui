@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Explore Host Activity</title>
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-image: url('https://raw.githubusercontent.com/comptonka/elastic-ctf-ui/main/elastic_cluster.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      margin: 0;
+      padding: 2rem;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      background-color: #ffffff;
+      padding: 2rem;
+      opacity: 93%;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+      max-width: 640px;
+      width: 100%;
+      position: relative;
+    }
+    h2 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #343741;
+      margin-bottom: 1rem;
+    }
+    h3.subtitle {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #006BB4;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1.5rem;
+    }
+    .question-block {
+      margin-bottom: 2rem;
+    }
+    label {
+      font-weight: 600;
+      display: block;
+      margin-bottom: 0.5rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.6rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background-color: #e8f0fe;
+    }
+    .result {
+      margin-top: 0.5rem;
+      font-weight: 500;
+      padding: 0.5rem;
+      border-radius: 6px;
+    }
+    .correct {
+      background-color: #e6f4ea;
+      color: #017d73;
+      border-left: 4px solid #017d73;
+    }
+    .incorrect {
+      background-color: #fbeae5;
+      color: #bd271e;
+      border-left: 4px solid #bd271e;
+    }
+    button {
+      margin-top: 0.75rem;
+      padding: 0.5rem 1rem;
+      background-color: #006BB4;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Challenge Questions</h2>
+    <h3 class="subtitle" id="subtitle"></h3>
+    <div id="questions"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+  const quizData = [
+    {
+      id: "set1",
+      title: "Initial Host Metrics",
+      questions: [
+        { id: "q1", text: "How many hosts are displayed?", answer: "13" },
+        { id: "q2", text: "How many unique source IPs are displayed?", answer: "3700" },
+        { id: "q3", text: "How many unique destination IPs are displayed?", answer: "960" }
+      ]
+    },
+    {
+      id: "set2",
+      title: "Histogram Filtering",
+      questions: [
+        { id: "q4", text: "Filter the Events histogram by event.module:endpoint, how many events are displayed?", answer: "9269498" },
+        { id: "q5", text: "Keep the event.module:endpoint filter and filter the Events histogram by event.dataset: endpoint.alerts. How many hosts are displayed?", answer: "4" }
+      ]
+    },
+    {
+      id: "set3",
+      title: "Host Details",
+      questions: [
+        { id: "q6", text: "Select the All hosts tab. Which host is using Linux as its operating system?", answer: "web02" },
+        { id: "q7", text: "Select dc01. How many critical alerts are open on dc01?", answer: "79" },
+        { id: "q8", text: "What is the alert rule name with the highest count on dc01?", answer: "Malware Detection Alert" }
+      ]
+    },
+    {
+      id: "set4",
+      title: "Uncommon Processes",
+      questions: [
+        { id: "q9", text: "Return to the main Hosts page and keep the current filters. Select the Uncommon processes tab. Which host has the highest number of instances for an uncommon process?", answer: "dc01" },
+        { id: "q10", text: "What is the name of the uncommon process on dc01 that was located in the Downloads directory of user MSSQL_svc?", answer: "Trickbot.exe" },
+        { id: "q11", text: "Name one of the spoofed process names that resemble the malware found in the previous question.", answer: "Tsickbot.exe" }
+      ]
+    }
+  ];
+
+  let currentSetIndex = 0;
+  const container = document.querySelector(".container");
+  let correctAnswers = {};
+
+  function normalize(str) {
+    return str.toLowerCase().replace(/,/g, '').trim();
+  }
+
+  function renderQuestions(set) {
+    const questionDiv = document.getElementById("questions");
+    questionDiv.innerHTML = "";
+    document.getElementById("subtitle").textContent = set.title;
+    correctAnswers = {};
+
+    set.questions.forEach((q, i) => {
+      correctAnswers[q.id] = false;
+
+      const block = document.createElement("div");
+      block.className = "question-block";
+      block.innerHTML = `
+        <label for="${q.id}">${i + 1}. ${q.text}</label>
+        <input type="text" id="${q.id}" />
+        <button data-qid="${q.id}" data-answer='${JSON.stringify(q.answer)}'>Submit</button>
+        <p class="result" id="result-${q.id}"></p>
+      `;
+      questionDiv.appendChild(block);
+    });
+
+    setTimeout(() => {
+      document.querySelectorAll("button[data-qid]").forEach(button => {
+        button.addEventListener("click", () => {
+          const qid = button.getAttribute("data-qid");
+          const correct = JSON.parse(button.getAttribute("data-answer"));
+          submitAnswer(qid, correct);
+        });
+      });
+    }, 0);
+  }
+
+  function submitAnswer(qid, correct) {
+    const input = document.getElementById(qid).value;
+    const result = document.getElementById(`result-${qid}`);
+    result.classList.remove("correct", "incorrect");
+
+    const normalizedInput = normalize(input);
+    const validAnswers = Array.isArray(correct) ? correct : [correct];
+    const normalizedCorrect = validAnswers.map(ans => normalize(ans));
+
+    const isCorrect = normalizedInput && normalizedCorrect.includes(normalizedInput);
+
+    if (isCorrect) {
+      result.textContent = "✅ Correct!";
+      result.classList.add("correct");
+      correctAnswers[qid] = true;
+    } else {
+      result.textContent = "❌ Incorrect";
+      result.classList.add("incorrect");
+      correctAnswers[qid] = false;
+    }
+
+    checkAllCorrect();
+  }
+
+  function checkAllCorrect() {
+    if (Object.values(correctAnswers).every(v => v)) {
+      if (!document.getElementById("next-btn")) {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        const nextBtn = document.createElement("button");
+        nextBtn.id = "next-btn";
+        nextBtn.textContent = "Next →";
+        nextBtn.style = "position:absolute; bottom:2rem; right:2rem;";
+        nextBtn.onclick = loadNextTrack;
+        container.appendChild(nextBtn);
+      }
+    }
+  }
+
+  function loadNextTrack() {
+    currentSetIndex++;
+    if (quizData[currentSetIndex]) {
+      renderQuestions(quizData[currentSetIndex]);
+      const nextBtn = document.getElementById("next-btn");
+      if (nextBtn) nextBtn.remove();
+    } else {
+      document.getElementById("subtitle").remove();
+      document.getElementById("questions").innerHTML = "<h3>🎉 Nice work! In this lab, you used the Hosts page to investigate endpoint activity. By filtering for endpoint alerts, identifying uncommon processes, and drilling into process behavior, you uncovered signs of malware and masquerading tactics.<br><br>Click <strong>Next</strong> at the bottom of the Instructions Pane to continue.</h3>";
+      const nextBtn = document.getElementById("next-btn");
+      if (nextBtn) nextBtn.remove();
+    }
+  }
+
+  window.onload = () => renderQuestions(quizData[currentSetIndex]);
+</script>
+</body>
+</html>
+
