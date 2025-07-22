@@ -10,11 +10,11 @@ fi
 
 echo "🔧 Stopping existing server on port 8080 (if any)..."
 fuser -k 8080/tcp || true
-sleep 2
+sleep 4
 
 echo "🚀 Starting server for Challenge $CHALLENGE..."
 python3 /opt/html/server.py &
 
-sleep 2
+sleep 1
 echo "✅ Server running."
 echo "🔗 Open http://kubernetes-vm:8080/index${CHALLENGE}.html"
