@@ -10,7 +10,7 @@ fi
 
 echo "🔧 Stopping existing server on port 8080 (if any)..."
 fuser -k 8080/tcp || true
-sleep 4
+sleep 2
 
 echo "🚀 Starting server for Challenge $CHALLENGE..."
 python3 /opt/html/server.py &
