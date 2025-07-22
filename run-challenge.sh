@@ -21,7 +21,7 @@ fuser -k 8080/tcp || true
 wait_for_port_to_free 8080
 
 echo "🚀 Starting server for Challenge $CHALLENGE..."
-nohup python3 /opt/html/server.py > /opt/html/server.log 2>&1 &
+exec python3 /opt/html/server.py
 
 # Wait briefly for server to initialize
 sleep 2
